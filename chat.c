@@ -4,7 +4,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
-#include "chat.h"
 
 #define PORT "1337"
 #define BACKLOG 5
