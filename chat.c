@@ -6,10 +6,12 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>
+#include "become_daemon.h"
+#include "inet_sockets.h"
 
 #define PORT "1337"
 #define BACKLOG 5
-#define BUZ_SIZE 4096
+#define BUF_SIZE 4096
 
 /* Get sockaddr, IPv4 or IPv6 */
 void *get_in_addr(struct sockaddr *sa) {
@@ -20,7 +22,7 @@ void *get_in_addr(struct sockaddr *sa) {
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-static void grimReaper(int sig) {	/* SIGCHLD handler to read dead child processes */
+/* static void grimReaper(int sig) {	/* SIGCHLD handler to read dead child processes
 	int savedErrno;
 
 	savedErrno = errno;
@@ -28,6 +30,24 @@ static void grimReaper(int sig) {	/* SIGCHLD handler to read dead child processe
 		continue;
 	errno = savedErrno;
 }
+
+static void handleRequest(int cfd) {
+	char buf[BUF_SIZE];
+	ssize_t numRead;
+
+	while ((numRead = read(cfd, buf, BUF_SIZE)) > 0) {
+		if (write(cfd, buf, numRead) != numRead) {
+			syslog(LOG_ERR, "write() failed: %s", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (numRead == -1) {
+		syslog(LOG_ERR, "Error from read(): %s", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+} */
+
 int main(void) {
 	int sockfd, new_sockfd;
 	struct addrinfo host_addr, *res;
