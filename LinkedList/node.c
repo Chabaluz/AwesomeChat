@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "node.h"
+#include <stdlib.h>
 
 /**
  * @brief nodeItr   Iterate through a list of nodes

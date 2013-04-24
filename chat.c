@@ -9,7 +9,7 @@
 
 #define PORT "1337"
 #define BACKLOG 5
-#define BUZ_SIZE 1024
+#define BUZ_SIZE 4096
 
 /* Get sockaddr, IPv4 or IPv6 */
 void *get_in_addr(struct sockaddr *sa) {
@@ -20,6 +20,14 @@ void *get_in_addr(struct sockaddr *sa) {
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+static void grimReaper(int sig) {	/* SIGCHLD handler to read dead child processes */
+	int savedErrno;
+
+	savedErrno = errno;
+	while (waitpid(-1, NULL, WNOHANG) > 0)
+		continue;
+	errno = savedErrno;
+}
 int main(void) {
 	int sockfd, new_sockfd;
 	struct addrinfo host_addr, *res;
