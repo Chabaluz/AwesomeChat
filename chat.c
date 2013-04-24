@@ -4,9 +4,12 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define PORT "1337"
 #define BACKLOG 5
+#define BUZ_SIZE 1024
 
 /* Get sockaddr, IPv4 or IPv6 */
 void *get_in_addr(struct sockaddr *sa) {
@@ -22,10 +25,10 @@ int main(void) {
 	struct addrinfo host_addr, *res;
 	struct sockaddr_storage client_addr;	// Client's address information
 	socklen_t sin_size;
-	int yes = 1;
+	const int yes = 1;
 	int recv_len = 1;
 	char s[INET6_ADDRSTRLEN];
-	char buffer[1024];
+	char buffer[BUF_SIZE];
 
 	memset(&host_addr, 0, sizeof host_addr);
 	host_addr.ai_family = AF_UNSPEC;		// IPv4 and IPv6
@@ -36,19 +39,19 @@ int main(void) {
 
 	/* Make a socket */
 	if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
-		error("in socket");
+		perror("in socket");
 	
 	/* Set socket options */
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
-		error("in setting socket options");
+		perror("in setting socket options");
 
 	/* Bind it to port 1337 */
 	if (bind(sockfd, res->ai_addr, res->ai_addrlen) == -1)
-		error("in binding to socket");
+		perror("in binding to socket");
 	
 	/* Listen */
 	if (listen(sockfd, BACKLOG) == -1)
-		error("listening on socket");
+		perror("listening on socket");
 
 	printf("Server: Waiting for connections...\n");
 
@@ -56,7 +59,7 @@ int main(void) {
 		sin_size = sizeof client_addr;
 		new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
 		if (new_sockfd == -1)
-			error("accepting");
+			perror("accepting");
 		
 		inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), s, sizeof s);
 		printf("Got connection from %s\n", s);
@@ -64,7 +67,7 @@ int main(void) {
 		if (!fork()) {	// This is the child process
 			close(sockfd);	// Child doesn't need the listener
 			if (send(new_sockfd, "Hello, world!\n", 13, 0) == -1)
-				error("sending");
+				perror("sending");
 			recv_len = recv(new_sockfd, &buffer, 1024, 0);
 			while (recv_len > 0) {
 				printf("Bytes received: %d\n", recv_len);
@@ -72,7 +75,7 @@ int main(void) {
 				recv_len = recv(new_sockfd, &buffer, 1024, 0);
 			}
 			close(new_sockfd);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		}
 		close(new_sockfd);	// Parent doesn't need this
 	}
